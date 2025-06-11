@@ -9,8 +9,10 @@ export class SocketOnDataHandler {
     request: HTTPRequest,
     content: string
   ): [Uint8Array | string, string | null] {
-    if (request.headers.getheaders()["Accept-Encoding"] === 'gzip') {
-      // return [Bun.gzipSync(content), "gzip"];
+    const acceptEncodingSet = new Set(
+      request.headers.getheaders()["Accept-Encoding"]?.split(",") || []
+    );
+    if (acceptEncodingSet.has("gzip")) {
       return [content, "gzip"];
     }
     return [content, null];
