@@ -10,7 +10,8 @@ export class SocketOnDataHandler {
     content: string
   ): [Uint8Array | string, string | null] {
     if (request.headers.getheaders()["Accept-Encoding"] === 'gzip') {
-      return [Bun.gzipSync(content), "gzip"];
+      // return [Bun.gzipSync(content), "gzip"];
+      return [content, "gzip"];
     }
     return [content, null];
   }
