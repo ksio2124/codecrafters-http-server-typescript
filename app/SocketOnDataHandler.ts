@@ -4,6 +4,25 @@ import { HTTPResponse } from "./HTTPResponse";
 import { HTTPRequest } from "./HTTPRequest";
 
 export class SocketOnDataHandler {
+
+  static handleRootRequest(socket: net.Socket, request: HTTPRequest) {
+    if (request.headers.getheaders()["Connection"] !== "close") {
+      socket.write("HTTP/1.1 200 OK\r\n\r\n");
+      return;
+    }
+    let responseHeader = new HTTPHeader();
+    responseHeader = SocketOnDataHandler.handleConnectionClose(
+      responseHeader,
+      request
+    );
+    const response = new HTTPResponse(
+      200,
+      "OK",
+      "",
+      responseHeader
+    );
+    socket.write(response.getHeaderAsString());
+  }
   static getEncodedContent(
     request: HTTPRequest,
     content: string
@@ -60,21 +79,25 @@ export class SocketOnDataHandler {
   }
 
   static handleEchoRequest(socket: net.Socket, request: HTTPRequest) {
-    const reponseHeader = new HTTPHeader();
-    reponseHeader.addHeader("Content-Type", "text/plain");
+    let responseHeader = new HTTPHeader();
+    responseHeader.addHeader("Content-Type", "text/plain");
+    responseHeader = SocketOnDataHandler.handleConnectionClose(
+      responseHeader,
+      request
+    );
     const [content, encoding] = this.getEncodedContent(
       request,
       request.path[2]
     );
-    reponseHeader.addHeader("Content-Length", content.length.toString());
+    responseHeader.addHeader("Content-Length", content.length.toString());
     if (encoding) {
-      reponseHeader.addHeader("Content-Encoding", encoding);
+      responseHeader.addHeader("Content-Encoding", encoding);
     }
     const response = new HTTPResponse(
       200,
       "OK",
       content,
-      reponseHeader
+      responseHeader
     );
     // socket.write(response.toString());
     socket.write(response.getHeaderAsString());
@@ -82,9 +105,9 @@ export class SocketOnDataHandler {
   }
 
   static handleUserAgentRequest(socket: net.Socket, request: HTTPRequest) {
-    const reponseHeader = new HTTPHeader();
-    reponseHeader.addHeader("Content-Type", "text/plain");
-    reponseHeader.addHeader(
+    const responseHeader = new HTTPHeader();
+    responseHeader.addHeader("Content-Type", "text/plain");
+    responseHeader.addHeader(
       "Content-Length",
       request.headers.getheaders()["User-Agent"].length.toString()
     );
@@ -92,8 +115,16 @@ export class SocketOnDataHandler {
       200,
       "OK",
       request.headers.getheaders()["User-Agent"],
-      reponseHeader
+      responseHeader
     );
     socket.write(response.toString());
+  }
+
+  static handleConnectionClose(responseHeader: HTTPHeader,request: HTTPRequest) {
+    // Handle connection close logic if needed
+    if (request.headers.getheaders()["Connection"] === "close") {
+      responseHeader.addHeader("Connection", "close");
+    }
+    return responseHeader;
   }
 }
