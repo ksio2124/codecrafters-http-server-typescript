@@ -10,7 +10,7 @@ export class SocketOnDataHandler {
     content: string
   ): [Uint8Array | string, string | null] {
     const acceptEncodingSet = new Set(
-      request.headers.getheaders()["Accept-Encoding"]?.split(",") || []
+      request.headers.getheaders()["Accept-Encoding"]?.split(", ") || []
     );
     if (acceptEncodingSet.has("gzip")) {
       return [content, "gzip"];
