@@ -5,6 +5,16 @@ import { HTTPRequest } from "./HTTPRequest";
 
 export class SocketOnDataHandler {
 
+  static getEncodedContent(
+    request: HTTPRequest,
+    content: string
+  ): [Uint8Array | string, string | null] {
+    if (request.headers.getheaders()["Accept-Encoding"] === 'gzip') {
+      return [Bun.gzipSync(content), "gzip"];
+    }
+    return [content, null];
+  }
+
   static async handleFileRequest (
     socket: net.Socket,
     request: HTTPRequest
@@ -70,10 +80,21 @@ export class SocketOnDataHandler {
   ) {
     const reponseHeader = new HTTPHeader();
     reponseHeader.addHeader("Content-Type", "text/plain");
+    // reponseHeader.addHeader(
+    //   "Content-Length",
+    //   request.path[2].length.toString()
+    // );
+    const [content, encoding] = this.getEncodedContent(
+      request,
+      request.path[2]
+    );
     reponseHeader.addHeader(
       "Content-Length",
-      request.path[2].length.toString()
+      content.length.toString()
     );
+    if (encoding) {
+      reponseHeader.addHeader("Content-Encoding", encoding);
+    }
     const response = new HTTPResponse(
       200,
       "OK",
