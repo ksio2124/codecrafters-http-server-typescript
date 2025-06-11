@@ -38,7 +38,7 @@ const server = net.createServer((socket) => {
     } else {
       socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
     }
-    socket.end();
+    // socket.end();
   });
 });
 
