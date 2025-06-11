@@ -1,100 +1,11 @@
-import { request } from "http";
 import * as net from "net";
+import { HTTPHeader } from "./HTTPHeader";
+import { HTTPResponse } from "./HTTPResponse";
+import { HTTPRequest } from "./HTTPRequest";
+import { SocketOnDataHandler } from "./SocketOnDataHandler";
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 console.log("Logs from your program will appear here!");
-
-class HTTPRequest {
-  method: string;
-  path: string[];
-  version: string;
-  headers: HTTPHeader;
-  constructor(data: string) {
-    // Parse the HTTP request data
-    const lines = data.split("\r\n");
-    let requestLine = lines[0];
-    let fullPath = "";
-    [this.method, fullPath, this.version] = requestLine.split(" ");
-    this.path = fullPath.split("/");
-    let headers = lines.slice(1);
-    this.headers = new HTTPHeader();
-    for (let header of headers) {
-      const [name, value] = header.split(": ");
-      this.headers.addHeader(name, value);
-    }
-  }
-}
-
-class HTTPResponse {
-  statusCode: number;
-  statusMessage: string;
-  header: HTTPHeader;
-  body: string;
-  constructor(
-    statusCode: number,
-    statusMessage: string,
-    body: string,
-    header: HTTPHeader
-  ) {
-    this.header = header;
-    this.body = body;
-    this.statusCode = statusCode;
-    this.statusMessage = statusMessage;
-  }
-
-  toString() {
-    return `HTTP/1.1 ${this.statusCode} ${
-      this.statusMessage
-    }\r\n${this.header.getHeadersAsString()}\r\n\r\n${this.body}`;
-  }
-}
-class HTTPHeader {
-  headers: Record<string, string>;
-  constructor() {
-    this.headers = {};
-  }
-  addHeader(name: string, value: string) {
-    this.headers[name] = value;
-  }
-  getheaders() {
-    return this.headers;
-  }
-  getHeadersAsString() {
-    return Object.entries(this.headers)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join("\r\n");
-  }
-}
-
-const handleFileRequest = async (
-  socket: net.Socket,
-  request: HTTPRequest
-) => {
-  const fileDirArgIdx= Bun.argv.indexOf("--directory") + 1;
-  const fileDir = fileDirArgIdx === 0 ? null : Bun.argv[fileDirArgIdx];
-  if (!fileDir) {
-    socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
-    return;
-  }
-  const fileName = request.path.slice(2).join("/");
-  const filePath = `${fileDir}/${fileName}`;
-  // access the file system to read the file and send it back as ocetstream
-  try {
-    const fileContent = await Bun.file(filePath).text();
-    const responseHeader = new HTTPHeader();
-    responseHeader.addHeader("Content-Type", "application/octet-stream");
-    responseHeader.addHeader("Content-Length", fileContent.length.toString());
-    const response = new HTTPResponse(
-      200,
-      "OK",
-      fileContent,
-      responseHeader
-    );
-    socket.write(response.toString());
-  } catch (error) {
-    socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
-  }
-}
 
 // Uncomment this to pass the first stage
 const server = net.createServer((socket) => {
@@ -114,38 +25,16 @@ const server = net.createServer((socket) => {
     ) {
       socket.write("HTTP/1.1 200 OK\r\n\r\n");
     } else if (request.method === "GET" && request.path[1] === "echo") {
-      const reponseHeader = new HTTPHeader();
-      reponseHeader.addHeader("Content-Type", "text/plain");
-      reponseHeader.addHeader(
-        "Content-Length",
-        request.path[2].length.toString()
-      );
-      const response = new HTTPResponse(
-        200,
-        "OK",
-        request.path[2],
-        reponseHeader
-      );
-      socket.write(response.toString());
+      SocketOnDataHandler.handleEchoRequest(socket, request);
     } else if (request.method === "GET" && request.path[1] === "user-agent") {
-      const reponseHeader = new HTTPHeader();
-      reponseHeader.addHeader("Content-Type", "text/plain");
-      reponseHeader.addHeader(
-        "Content-Length",
-        request.headers.getheaders()["User-Agent"].length.toString()
-      );
-      const response = new HTTPResponse(
-        200,
-        "OK",
-        request.headers.getheaders()["User-Agent"],
-        reponseHeader
-      );
-      socket.write(response.toString());
+      SocketOnDataHandler.handleUserAgentRequest(socket, request);
     } else if (
       request.method === "GET" &&
       request.path[1] === "files"
     ) {
-      await handleFileRequest(socket, request);
+      await SocketOnDataHandler.handleFileRequest(socket, request);
+    } else if (request.method === "POST" && request.path[1] === "files") {
+      await SocketOnDataHandler.handleFilePostRequest(socket, request);
     } else {
       socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
     }
