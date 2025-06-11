@@ -4,11 +4,11 @@ export class HTTPResponse {
   statusCode: number;
   statusMessage: string;
   header: HTTPHeader;
-  body: string;
+  body: string | Uint8Array;
   constructor(
     statusCode: number,
     statusMessage: string,
-    body: string,
+    body: string | Uint8Array,
     header: HTTPHeader
   ) {
     this.header = header;

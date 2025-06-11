@@ -4,7 +4,6 @@ import { HTTPResponse } from "./HTTPResponse";
 import { HTTPRequest } from "./HTTPRequest";
 
 export class SocketOnDataHandler {
-
   static getEncodedContent(
     request: HTTPRequest,
     content: string
@@ -18,11 +17,8 @@ export class SocketOnDataHandler {
     return [content, null];
   }
 
-  static async handleFileRequest (
-    socket: net.Socket,
-    request: HTTPRequest
-  ) {
-    const fileDirArgIdx= Bun.argv.indexOf("--directory") + 1;
+  static async handleFileRequest(socket: net.Socket, request: HTTPRequest) {
+    const fileDirArgIdx = Bun.argv.indexOf("--directory") + 1;
     const fileDir = fileDirArgIdx === 0 ? null : Bun.argv[fileDirArgIdx];
     if (!fileDir) {
       socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
@@ -36,22 +32,14 @@ export class SocketOnDataHandler {
       const responseHeader = new HTTPHeader();
       responseHeader.addHeader("Content-Type", "application/octet-stream");
       responseHeader.addHeader("Content-Length", fileContent.length.toString());
-      const response = new HTTPResponse(
-        200,
-        "OK",
-        fileContent,
-        responseHeader
-      );
+      const response = new HTTPResponse(200, "OK", fileContent, responseHeader);
       socket.write(response.toString());
     } catch (error) {
       socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
     }
   }
 
-  static async handleFilePostRequest(
-    socket: net.Socket,
-    request: HTTPRequest
-  ) {
+  static async handleFilePostRequest(socket: net.Socket, request: HTTPRequest) {
     const fileDirArgIdx = Bun.argv.indexOf("--directory") + 1;
     const fileDir = fileDirArgIdx === 0 ? null : Bun.argv[fileDirArgIdx];
     if (!fileDir) {
@@ -64,65 +52,46 @@ export class SocketOnDataHandler {
     try {
       await Bun.write(filePath, request.body);
       const responseHeader = new HTTPHeader();
-      const response = new HTTPResponse(
-        201,
-        "Created",
-        "",
-        responseHeader
-      );
+      const response = new HTTPResponse(201, "Created", "", responseHeader);
       socket.write(response.toString());
     } catch (error) {
       socket.write("HTTP/1.1 500 Internal Server Error\r\n\r\n");
     }
   }
 
-
-  static handleEchoRequest(
-    socket: net.Socket,
-    request: HTTPRequest
-  ) {
+  static handleEchoRequest(socket: net.Socket, request: HTTPRequest) {
     const reponseHeader = new HTTPHeader();
     reponseHeader.addHeader("Content-Type", "text/plain");
-    // reponseHeader.addHeader(
-    //   "Content-Length",
-    //   request.path[2].length.toString()
-    // );
     const [content, encoding] = this.getEncodedContent(
       request,
       request.path[2]
     );
-    reponseHeader.addHeader(
-      "Content-Length",
-      content.length.toString()
-    );
+    reponseHeader.addHeader("Content-Length", content.length.toString());
     if (encoding) {
       reponseHeader.addHeader("Content-Encoding", encoding);
     }
     const response = new HTTPResponse(
       200,
       "OK",
-      request.path[2],
+      content,
       reponseHeader
     );
     socket.write(response.toString());
   }
-  
-  static handleUserAgentRequest(
-    socket: net.Socket,
-    request: HTTPRequest
-  ) {
+
+  static handleUserAgentRequest(socket: net.Socket, request: HTTPRequest) {
     const reponseHeader = new HTTPHeader();
-      reponseHeader.addHeader("Content-Type", "text/plain");
-      reponseHeader.addHeader(
-        "Content-Length",
-        request.headers.getheaders()["User-Agent"].length.toString()
-      );
-      const response = new HTTPResponse(
-        200,
-        "OK",
-        request.headers.getheaders()["User-Agent"],
-        reponseHeader
-      );
-      socket.write(response.toString());
-    }
+    reponseHeader.addHeader("Content-Type", "text/plain");
+    reponseHeader.addHeader(
+      "Content-Length",
+      request.headers.getheaders()["User-Agent"].length.toString()
+    );
+    const response = new HTTPResponse(
+      200,
+      "OK",
+      request.headers.getheaders()["User-Agent"],
+      reponseHeader
+    );
+    socket.write(response.toString());
+  }
 }
