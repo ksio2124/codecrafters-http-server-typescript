@@ -22,4 +22,7 @@ export class HTTPResponse {
       this.statusMessage
     }\r\n${this.header.getHeadersAsString()}\r\n\r\n${this.body}`;
   }
+  getHeaderAsString() {
+    return `HTTP/1.1 ${this.statusCode} ${this.statusMessage}\r\n${this.header.getHeadersAsString()}\r\n\r\n`;
+  }
 }

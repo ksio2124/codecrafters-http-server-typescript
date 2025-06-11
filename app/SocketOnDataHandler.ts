@@ -76,7 +76,9 @@ export class SocketOnDataHandler {
       content,
       reponseHeader
     );
-    socket.write(response.toString());
+    // socket.write(response.toString());
+    socket.write(response.getHeaderAsString());
+    socket.write(content);
   }
 
   static handleUserAgentRequest(socket: net.Socket, request: HTTPRequest) {
