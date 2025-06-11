@@ -105,7 +105,11 @@ export class SocketOnDataHandler {
   }
 
   static handleUserAgentRequest(socket: net.Socket, request: HTTPRequest) {
-    const responseHeader = new HTTPHeader();
+    let responseHeader = new HTTPHeader();
+    responseHeader = SocketOnDataHandler.handleConnectionClose(
+      responseHeader,
+      request
+    );
     responseHeader.addHeader("Content-Type", "text/plain");
     responseHeader.addHeader(
       "Content-Length",
