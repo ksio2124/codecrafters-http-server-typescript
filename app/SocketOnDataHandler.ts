@@ -13,7 +13,7 @@ export class SocketOnDataHandler {
       request.headers.getheaders()["Accept-Encoding"]?.split(", ") || []
     );
     if (acceptEncodingSet.has("gzip")) {
-      return [content, "gzip"];
+      return [Bun.gzipSync(content), "gzip"];
     }
     return [content, null];
   }
