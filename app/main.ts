@@ -91,7 +91,9 @@ const handleFileRequest = async (
       responseHeader
     );
     socket.write(response.toString());
-  } catch (error) {}
+  } catch (error) {
+    socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
+  }
 }
 
 // Uncomment this to pass the first stage
