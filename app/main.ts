@@ -4,17 +4,23 @@ import * as net from "net";
 console.log("Logs from your program will appear here!");
 
 class HTTPRequest {
-  header: string;
   method: string;
   path: string[];
   version: string;
+  headers: HTTPHeader;
   constructor( data: string){
     // Parse the HTTP request data
     const lines = data.split("\r\n");
-    this.header = lines[0];
+    let requestLine = lines[0];
     let fullPath = '';
-    [this.method, fullPath, this.version] = this.header.split(" ");
+    [this.method, fullPath, this.version] = requestLine.split(" ");
     this.path = fullPath.split("/");
+    let headers = lines.slice(1);
+    this.headers = new HTTPHeader();
+    for (let header of headers) {
+      const [name, value] = header.split(": ");
+      this.headers.addHeader(name, value);
+    }
   }
 }
 
@@ -70,7 +76,13 @@ const server = net.createServer((socket) => {
       reponseHeader.addHeader("Content-Length", request.path[2].length.toString());
       const response = new HTTPResponse(200, "OK", request.path[2], reponseHeader);
       socket.write(response.toString());
-    } else {
+    } else if (request.method === "GET" && request.path[1] === "user-agent") {
+      const reponseHeader = new HTTPHeader();
+      reponseHeader.addHeader("Content-Type", "text/plain");
+      reponseHeader.addHeader("Content-Length", request.headers.getheaders()["User-Agent"].length.toString());
+      const response = new HTTPResponse(200, "OK", request.headers.getheaders()["User-Agent"], reponseHeader);
+      socket.write(response.toString());
+    }else {
       socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
     }
     socket.end();
