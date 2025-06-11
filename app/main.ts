@@ -76,7 +76,7 @@ const handleFileRequest = async (
     socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
     return;
   }
-  const fileName = request.path[2];
+  const fileName = request.path.slice(2).join("/");
   const filePath = `${fileDir}/${fileName}`;
   // access the file system to read the file and send it back as ocetstream
   try {
